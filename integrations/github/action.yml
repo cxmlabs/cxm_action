@@ -1,0 +1,46 @@
+name: 'CXM IAC Crawler'
+description: 'Scan Terraform infrastructure and send resources to CXM API (Multi-platform Docker-based)'
+branding:
+  icon: 'cloud'
+  color: 'blue'
+
+inputs:
+  cxm-api-key:
+    description: 'CXM API key for authentication'
+    required: true
+  cxm-api-endpoint:
+    description: 'CXM API endpoint URL'
+    required: false
+    default: ''
+  repository-url:
+    description: 'Repository URL to include in API requests (auto-detected if not provided)'
+    required: false
+    default: ''
+  verbose:
+    description: 'Enable verbose logging'
+    required: false
+    default: 'false'
+  terraform-show-timeout:
+    description: 'Timeout in seconds for terraform show command (default: 300)'
+    required: false
+    default: '300'
+  max-retries:
+    description: 'Maximum number of retry attempts for API calls (default: 3)'
+    required: false
+    default: '3'
+  timeout-seconds:
+    description: 'Timeout in seconds for API calls (default: 30)'
+    required: false
+    default: '30'
+
+runs:
+  using: 'docker'
+  image: '../../Dockerfile'
+  env:
+    CXM_API_KEY: ${{ inputs.cxm-api-key }}
+    CXM_API_ENDPOINT: ${{ inputs.cxm-api-endpoint }}
+    INPUT_REPOSITORY_URL: ${{ inputs.repository-url }}
+    INPUT_VERBOSE: ${{ inputs.verbose }}
+    TERRAFORM_SHOW_TIMEOUT: ${{ inputs.terraform-show-timeout }}
+    CXM_MAX_RETRIES: ${{ inputs.max-retries }}
+    CXM_TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}

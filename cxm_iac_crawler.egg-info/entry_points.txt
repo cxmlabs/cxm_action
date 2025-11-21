@@ -1,0 +1,2 @@
+[console_scripts]
+cxm-iac-crawler = cxm_iac_crawler.cli:main

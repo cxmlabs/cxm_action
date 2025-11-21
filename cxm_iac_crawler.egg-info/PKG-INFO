@@ -1,0 +1,229 @@
+Metadata-Version: 2.4
+Name: cxm-iac-crawler
+Version: 0.1.0
+Summary: Infrastructure as Code crawler for scanning Terraform configurations
+Requires-Python: ==3.12.*
+Description-Content-Type: text/markdown
+Requires-Dist: requests>=2.31.0
+
+# CXM IAC Crawler
+
+Multi-platform Infrastructure as Code crawler for scanning Terraform configurations and sending resource data to the CXM API.
+
+## Features
+
+- **Multi-Platform Support**: GitHub Actions and GitLab CI
+- **Automatic Platform Detection**: Detects CI/CD environment and collects metadata automatically
+- **Terraform Discovery**: Recursively finds `.terraform.lock.hcl` files
+- **Resource Extraction**: Executes `terraform show -json` to extract infrastructure state
+- **Sensitive Data Sanitization**: Automatically redacts sensitive values
+- **Batch Processing**: Sends resources to CXM API in configurable batches with retry logic
+- **Docker-Based**: Single Docker image works across all platforms
+
+## Quick Start
+
+### GitHub Actions
+
+**Important:** You must checkout your repository before using this action.
+
+```yaml
+name: Scan Terraform Infrastructure
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      # ⚠️ REQUIRED: Checkout repository first
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Run the IAC crawler
+      - name: Scan Terraform
+        uses: ./src/cxm-crawlers/cxm_iac_crawler/integrations/github
+        with:
+          cxm-api-key: ${{ secrets.CXM_API_KEY }}
+          cxm-api-endpoint: ${{ secrets.CXM_API_ENDPOINT }}
+          verbose: 'true'
+```
+
+### GitLab CI
+
+**Note:** GitLab CI automatically clones your repository, so no additional checkout step is needed.
+
+```yaml
+include:
+  - remote: 'https://raw.githubusercontent.com/koomo/cxm/main/src/cxm-crawlers/cxm_iac_crawler/integrations/gitlab/.gitlab-ci.yml'
+
+cxm-terraform-scan:
+  extends: .cxm_iac_scan
+  variables:
+    CXM_API_KEY: ${CXM_API_KEY}
+    CXM_API_ENDPOINT: ${CXM_API_ENDPOINT}
+    INPUT_VERBOSE: "true"
+```
+
+### Local Development / Docker
+
+```bash
+docker run -it --rm \
+  -e CXM_API_KEY="your-api-key" \
+  -e CXM_API_ENDPOINT="https://api.cxm.example.com/ci-endpoints/resources" \
+  -e INPUT_VERBOSE="true" \
+  -v $(pwd):/scan \
+  ghcr.io/koomo/cxm-iac-crawler:latest
+```
+
+## Configuration
+
+### Required Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `CXM_API_KEY` | CXM API key for authentication |
+
+### Optional Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CXM_API_ENDPOINT` | CXM API endpoint URL | - |
+| `INPUT_REPOSITORY_URL` | Repository URL (auto-detected) | Auto-detected |
+| `INPUT_SCAN_PATH` | Directory to scan | `.` |
+| `INPUT_VERBOSE` | Enable verbose logging | `false` |
+| `TERRAFORM_SHOW_TIMEOUT` | Terraform show timeout (seconds) | `300` |
+| `CXM_MAX_RETRIES` | Maximum API retry attempts | `3` |
+| `CXM_TIMEOUT_SECONDS` | API call timeout (seconds) | `30` |
+
+## How It Works
+
+1. **Platform Detection**: Automatically detects CI/CD environment (GitHub, GitLab)
+2. **Discovery**: Recursively searches for `.terraform.lock.hcl` files
+3. **Extraction**: Runs `terraform show -json` in each directory
+4. **Processing**: Extracts and flattens resources from module hierarchy
+5. **Sanitization**: Removes sensitive data using Terraform's `sensitive_values` metadata
+6. **Metadata Collection**: Collects platform-specific metadata (workflow ID, actor, etc.)
+7. **Batching**: Groups resources into batches of 1000
+8. **Transmission**: Sends batches to CXM API with retry logic
+
+## CI/CD Metadata Collected
+
+The crawler automatically collects the following metadata from your CI/CD environment:
+
+### Common to All Platforms
+- Platform name (github, gitlab, or generic)
+- Scan timestamp
+- Crawler version
+- Unique run ID
+
+### Platform-Specific
+- **GitHub Actions**: workflow ID, actor, trigger event, repository owner/name, runner OS/arch
+- **GitLab CI**: pipeline ID, actor, pipeline source, project namespace/name, default branch
+- **Generic**: Basic metadata for unsupported platforms or local development
+
+This metadata helps with:
+- **Traceability**: Track which CI/CD run produced which resources
+- **Debugging**: Link back to CI/CD logs via run URLs
+- **Analytics**: Understand usage patterns across platforms
+- **Auditing**: Compliance and security audits
+
+## Security
+
+- Sensitive data is automatically redacted based on Terraform's `sensitive_values`
+- Default redacted fields: `public_key`
+- Redacted values are replaced with `**SENSITIVE**` or `**REDACTED**`
+- API credentials should be stored in CI/CD secrets
+- Never commit `CXM_API_KEY` to version control
+
+## Error Handling
+
+- Individual directory failures are logged but don't stop the scan
+- Failed API requests are retried with exponential backoff
+- Fatal errors (e.g., invalid credentials) exit with non-zero status
+- Detailed error messages in verbose mode
+
+## Development
+
+### Prerequisites
+
+- Python 3.12
+- uv package manager
+- Terraform CLI
+- Docker (for building image)
+
+### Local Installation
+
+```bash
+cd src/cxm-crawlers/cxm_iac_crawler
+uv pip install -e .
+```
+
+### Local Usage
+
+```bash
+export CXM_API_KEY="your-api-key"
+export CXM_API_ENDPOINT="https://api.cxm.example.com/ci-endpoints/resources"
+
+cxm-iac-crawler /path/to/repository
+```
+
+### Building Docker Image
+
+```bash
+cd src/cxm-crawlers/cxm_iac_crawler
+docker build -t cxm-iac-crawler:local .
+```
+
+### Testing
+
+```bash
+uv run pytest
+```
+
+## Troubleshooting
+
+### Resources Not Found
+
+**Problem**: No resources are being sent.
+
+**Solutions**:
+- Ensure `.terraform.lock.hcl` files exist in your repository
+- Check that Terraform state is initialized (`terraform init`)
+- Run with `verbose: true` to see detailed logs
+
+### API Authentication Errors
+
+**Problem**: 401/403 errors from CXM API.
+
+**Solutions**:
+- Verify `CXM_API_KEY` is set correctly
+- Check API key has not expired
+- Ensure `CXM_API_ENDPOINT` is correct
+
+### Terraform Show Timeouts
+
+**Problem**: Terraform show commands timeout.
+
+**Solutions**:
+- Increase `TERRAFORM_SHOW_TIMEOUT` (default: 300s)
+- Check for large Terraform states
+- Ensure Terraform backend is accessible
+
+### Platform Detection Issues
+
+**Problem**: Platform detected as "generic" instead of GitHub/GitLab.
+
+**Solutions**:
+- **GitHub Actions**: Ensure you're running inside a GitHub Actions workflow
+- **GitLab CI**: Ensure you're running inside a GitLab CI pipeline
+- Check environment variables are set (`GITHUB_ACTIONS` or `GITLAB_CI`)
+- Enable verbose logging to see detected environment
+- "generic" platform is expected for local development
+
+## License
+
+Proprietary - Cloud ex Machina

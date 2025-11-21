@@ -1,0 +1,115 @@
+name: 'CXM IAC Crawler'
+description: 'Scan Terraform infrastructure and send resources to CXM API'
+branding:
+  icon: 'cloud'
+  color: 'blue'
+
+inputs:
+  github-token:
+    description: 'GitHub token for cloning the repository (defaults to github.token)'
+    required: false
+    default: ${{ github.token }}
+  repository:
+    description: 'Repository to clone (defaults to current repository)'
+    required: false
+    default: ${{ github.repository }}
+  ref:
+    description: 'Git ref to checkout (branch, tag, or commit SHA)'
+    required: false
+    default: ${{ github.ref }}
+  cxm-api-key:
+    description: 'CXM API key for authentication'
+    required: true
+  cxm-api-endpoint:
+    description: 'CXM API endpoint URL'
+    required: false
+  terraform-show-timeout:
+    description: 'Timeout in seconds for terraform show command (default: 300)'
+    required: false
+    default: '300'
+  sensitive-fields:
+    description: 'Comma-separated list of additional sensitive field patterns to redact'
+    required: false
+    default: ''
+  max-retries:
+    description: 'Maximum number of retry attempts for API calls (default: 3)'
+    required: false
+    default: '3'
+  timeout-seconds:
+    description: 'Timeout in seconds for API calls (default: 30)'
+    required: false
+    default: '30'
+  verbose:
+    description: 'Enable verbose logging'
+    required: false
+    default: 'false'
+  repository-url:
+    description: 'Repository URL to include in API requests (defaults to current repository URL)'
+    required: false
+    default: ${{ github.repositoryUrl }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+      with:
+        version: 'latest'
+
+    - name: Install Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_wrapper: false
+
+    - name: Clone Repository
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        CLONE_DIR="${RUNNER_TEMP}/iac-scan-repo"
+        echo "Cloning repository ${{ inputs.repository }} (ref: ${{ inputs.ref }})"
+
+        git clone --depth=1 --branch="${{ inputs.ref }}" \
+          "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ inputs.repository }}.git" \
+          "${CLONE_DIR}"
+
+        echo "CLONE_DIR=${CLONE_DIR}" >> $GITHUB_ENV
+        echo "Repository cloned to: ${CLONE_DIR}"
+
+    - name: Install IAC Crawler
+      shell: bash
+      run: |
+        cd "${{ github.action_path }}"
+        uv pip install --system .
+
+    - name: Run IAC Crawler
+      shell: bash
+      env:
+        CXM_API_KEY: ${{ inputs.cxm-api-key }}
+        CXM_API_ENDPOINT: ${{ inputs.cxm-api-endpoint }}
+        TERRAFORM_SHOW_TIMEOUT: ${{ inputs.terraform-show-timeout }}
+        SENSITIVE_FIELDS: ${{ inputs.sensitive-fields }}
+        CXM_MAX_RETRIES: ${{ inputs.max-retries }}
+        CXM_TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
+      run: |
+        VERBOSE_FLAG=""
+        if [ "${{ inputs.verbose }}" = "true" ]; then
+          VERBOSE_FLAG="--verbose"
+        fi
+
+        echo "Scanning repository: ${CLONE_DIR}"
+        cxm-iac-crawler $VERBOSE_FLAG --repository-url "${{ inputs.repository-url }}" "${CLONE_DIR}"
+
+    - name: Cleanup
+      shell: bash
+      if: always()
+      run: |
+        if [ -n "${CLONE_DIR}" ] && [ -d "${CLONE_DIR}" ]; then
+          echo "Cleaning up cloned repository: ${CLONE_DIR}"
+          rm -rf "${CLONE_DIR}"
+        fi

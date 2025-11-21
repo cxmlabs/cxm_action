@@ -1,0 +1,27 @@
+# CXM IAC Crawler - GitLab CI Template
+# Include this template in your .gitlab-ci.yml to scan Terraform infrastructure
+
+.cxm_iac_scan:
+  image: ghcr.io/koomo/cxm-iac-crawler:latest
+  stage: scan
+  variables:
+    INPUT_VERBOSE: "false"
+    TERRAFORM_SHOW_TIMEOUT: "300"
+    CXM_MAX_RETRIES: "3"
+    CXM_TIMEOUT_SECONDS: "30"
+  script:
+    - echo "CXM IAC Scan completed"
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Usage example:
+#
+# include:
+#   - remote: 'https://raw.githubusercontent.com/koomo/cxm/main/src/cxm-crawlers/cxm_iac_crawler/integrations/gitlab/.gitlab-ci.yml'
+#
+# cxm-terraform-scan:
+#   extends: .cxm_iac_scan
+#   variables:
+#     CXM_API_KEY: ${CXM_API_KEY}           # Set in CI/CD variables
+#     CXM_API_ENDPOINT: ${CXM_API_ENDPOINT} # Set in CI/CD variables
+#     INPUT_VERBOSE: "true"                  # Optional: enable verbose logging
