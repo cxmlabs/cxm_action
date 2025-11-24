@@ -174,6 +174,7 @@ def process_repository(
         entry_points = find_terraform_lock_files(repository_dir)
         logger.info("Discovering Terraform configurations via lock files")
 
+    errors = 0
     for entry_point in entry_points:
         entry_points_found += 1
         logger.info(f"Processing Terraform configuration at: {entry_point}")
@@ -190,7 +191,9 @@ def process_repository(
             raise
 
         except Exception as e:
+            errors +=1
             logger.error(f"Failed to process {entry_point.parent}: {e}", exc_info=True)
             continue
-
+    if errors > 0:
+        raise e
     logger.info(f"Scan complete: processed {entry_points_processed}/{entry_points_found} Terraform configurations")
