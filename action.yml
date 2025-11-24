@@ -47,6 +47,10 @@ inputs:
     description: 'Repository URL to include in API requests (defaults to current repository URL)'
     required: false
     default: ${{ github.repositoryUrl }}
+  dry-run:
+    description: 'Enable dry-run mode (parse data without posting to API)'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -102,8 +106,13 @@ runs:
           VERBOSE_FLAG="--verbose"
         fi
 
+        DRY_RUN_FLAG=""
+        if [ "${{ inputs.dry-run }}" = "true" ]; then
+          DRY_RUN_FLAG="--dry-run"
+        fi
+
         echo "Scanning repository: ${CLONE_DIR}"
-        cxm-iac-crawler $VERBOSE_FLAG --repository-url "${{ inputs.repository-url }}" "${CLONE_DIR}"
+        cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --repository-url "${{ inputs.repository-url }}" "${CLONE_DIR}"
 
     - name: Cleanup
       shell: bash

@@ -138,13 +138,14 @@ def process_show_output(show_output: dict) -> Iterator[dict]:
     return resources
 
 
-def process_repository(repository_dir: str | Path, repository_url: str, platform: str):
+def process_repository(repository_dir: str | Path, repository_url: str, platform: str, dry_run: bool = False):
     """Process all Terraform configurations in a repository.
 
     Args:
         repository_dir: Root directory of the repository to scan
         repository_url: URL of the repository being crawled
         platform: CI/CD platform name (github, gitlab, or generic)
+        dry_run: If True, parse data without sending to API
 
     Raises:
         subprocess.CalledProcessError: If terraform show fails
@@ -165,7 +166,7 @@ def process_repository(repository_dir: str | Path, repository_url: str, platform
         try:
             tfshow = compute_terraform_show(entry_point.parent)
             resources = process_show_output(tfshow)
-            send_data_to_cxm(resources, repository_url=repository_url, scan_metadata=scan_metadata)
+            send_data_to_cxm(resources, repository_url=repository_url, scan_metadata=scan_metadata, dry_run=dry_run)
             entry_points_processed += 1
 
         except subprocess.CalledProcessError as e:

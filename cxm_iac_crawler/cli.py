@@ -52,6 +52,11 @@ def main() -> int:
         action="store_true",
         help="Enable verbose logging (DEBUG level)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Enable dry-run mode (parse data without posting to API)",
+    )
 
     args = parser.parse_args()
 
@@ -79,8 +84,11 @@ def main() -> int:
             logger.warning("Repository URL not provided, using 'unknown'")
             repository_url = "unknown"
 
+        if args.dry_run:
+            logger.info("DRY-RUN MODE: Data will be parsed but not sent to API")
+
         logger.info(f"Starting IAC scan of repository: {repository_path}")
-        process_repository(repository_path, repository_url=repository_url, platform=platform)
+        process_repository(repository_path, repository_url=repository_url, platform=platform, dry_run=args.dry_run)
         logger.info("IAC scan completed successfully")
         return 0
 

@@ -78,6 +78,7 @@ def send_data_to_cxm(
     resource_list: Iterator[dict],
     repository_url: str,
     scan_metadata: dict,
+    dry_run: bool = False,
 ) -> None:
     """
     Send resources to CXM API in batches from a generator.
@@ -86,14 +87,21 @@ def send_data_to_cxm(
         resource_list: Iterator/generator yielding resource dictionaries
         repository_url: URL of the repository being crawled
         scan_metadata: CI/CD platform metadata
+        dry_run: If True, parse data without sending to API
 
     Raises:
-        ValueError: If CXM_API_KEY is not configured
+        ValueError: If CXM_API_KEY is not configured (unless in dry-run mode)
     """
-    if not CXM_API_KEY:
+    if not dry_run and not CXM_API_KEY:
         raise ValueError("CXM_API_KEY must be configured")
 
-    logger.info(f"Starting batch send with batch size: {BATCH_SIZE}")
+    if dry_run and (not CXM_API_KEY or not CXM_API_ENDPOINT):
+        logger.warning("DRY-RUN MODE: CXM_API_KEY and/or CXM_API_ENDPOINT not configured - data will only be parsed")
+
+    if dry_run:
+        logger.info(f"DRY-RUN MODE: Processing data with batch size {BATCH_SIZE} (no data will be sent)")
+    else:
+        logger.info(f"Starting batch send with batch size: {BATCH_SIZE}")
 
     total_resources = 0
     total_batches = 0
@@ -101,14 +109,22 @@ def send_data_to_cxm(
     for batch_idx, batch in enumerate(_batch_generator(resource_list, BATCH_SIZE)):
         total_resources += len(batch)
         total_batches += 1
-        _send_single_batch(
-            batch,
-            batch_idx,
-            repository_url=repository_url,
-            scan_metadata=scan_metadata,
-        )
+
+        if dry_run:
+            logger.info(f"DRY-RUN: Would send batch {batch_idx + 1} ({len(batch)} resources)")
+            logger.debug(f"DRY-RUN: Batch {batch_idx + 1} sample data: {batch[0] if batch else 'empty'}")
+        else:
+            _send_single_batch(
+                batch,
+                batch_idx,
+                repository_url=repository_url,
+                scan_metadata=scan_metadata,
+            )
 
     if total_batches == 0:
-        logger.warning("No resources were sent (generator was empty)")
+        logger.warning("No resources were processed (generator was empty)")
     else:
-        logger.info(f"Successfully sent all {total_batches} batches ({total_resources} resources)")
+        if dry_run:
+            logger.info(f"DRY-RUN: Processed {total_batches} batches ({total_resources} resources) without sending")
+        else:
+            logger.info(f"Successfully sent all {total_batches} batches ({total_resources} resources)")
