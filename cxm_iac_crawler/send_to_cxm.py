@@ -59,7 +59,8 @@ def _send_single_batch(
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.post(CXM_API_ENDPOINT, json=payload, headers=headers, timeout=TIMEOUT_SECONDS)
+            url = CXM_API_ENDPOINT.strip('/') + '/ci/events/resources'
+            response = requests.post(url, json=payload, headers=headers, timeout=TIMEOUT_SECONDS)
             response.raise_for_status()
 
             logger.info(f"Successfully sent batch {batch_index + 1} ({len(batch)} resources)")
