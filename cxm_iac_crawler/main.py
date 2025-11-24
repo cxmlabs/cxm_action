@@ -138,7 +138,13 @@ def process_show_output(show_output: dict) -> Iterator[dict]:
     return resources
 
 
-def process_repository(repository_dir: str | Path, repository_url: str, platform: str, dry_run: bool = False):
+def process_repository(
+    repository_dir: str | Path,
+    repository_url: str,
+    platform: str,
+    dry_run: bool = False,
+    paths: list[Path] | None = None,
+):
     """Process all Terraform configurations in a repository.
 
     Args:
@@ -146,6 +152,7 @@ def process_repository(repository_dir: str | Path, repository_url: str, platform
         repository_url: URL of the repository being crawled
         platform: CI/CD platform name (github, gitlab, or generic)
         dry_run: If True, parse data without sending to API
+        paths: Optional list of specific Terraform entry points to scan. If provided, lock file discovery is skipped.
 
     Raises:
         subprocess.CalledProcessError: If terraform show fails
@@ -159,12 +166,20 @@ def process_repository(repository_dir: str | Path, repository_url: str, platform
     entry_points_found = 0
     entry_points_processed = 0
 
-    for entry_point in find_terraform_lock_files(repository_dir):
+    # If specific paths are provided, use them; otherwise discover via lock files
+    if paths:
+        entry_points = paths
+        logger.info(f"Using {len(entry_points)} specified path(s), skipping lock file discovery")
+    else:
+        entry_points = find_terraform_lock_files(repository_dir)
+        logger.info("Discovering Terraform configurations via lock files")
+
+    for entry_point in entry_points:
         entry_points_found += 1
-        logger.info(f"Processing Terraform configuration at: {entry_point.parent}")
+        logger.info(f"Processing Terraform configuration at: {entry_point}")
 
         try:
-            tfshow = compute_terraform_show(entry_point.parent)
+            tfshow = compute_terraform_show(entry_point)
             resources = process_show_output(tfshow)
             send_data_to_cxm(resources, repository_url=repository_url, scan_metadata=scan_metadata, dry_run=dry_run)
             entry_points_processed += 1

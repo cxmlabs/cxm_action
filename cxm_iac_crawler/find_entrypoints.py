@@ -7,13 +7,13 @@ logger = logging.getLogger(__name__)
 
 def find_terraform_lock_files(root_dir: str | Path) -> Iterator[Path]:
     """
-    Find all .terraform.lock.hcl files in a directory tree
+    Find all directories containing .terraform.lock.hcl files in a directory tree
 
     Args:
         root_dir: Root directory to search from
 
     Yields:
-        Path objects for each .terraform.lock.hcl file found
+        Path objects for each directory containing a .terraform.lock.hcl file
     """
     root_path = Path(root_dir)
 
@@ -27,4 +27,5 @@ def find_terraform_lock_files(root_dir: str | Path) -> Iterator[Path]:
 
     logger.info(f"Searching for .terraform.lock.hcl files in {root_path}")
 
-    yield from root_path.rglob(".terraform.lock.hcl")
+    for lock_file in root_path.rglob(".terraform.lock.hcl"):
+        yield lock_file.parent

@@ -57,6 +57,12 @@ def main() -> int:
         action="store_true",
         help="Enable dry-run mode (parse data without posting to API)",
     )
+    parser.add_argument(
+        "--path",
+        type=str,
+        help="Specific Terraform entrypoint path(s) to scan (comma-separated). If provided, lock file discovery is skipped.",
+        default=None,
+    )
 
     args = parser.parse_args()
 
@@ -87,8 +93,18 @@ def main() -> int:
         if args.dry_run:
             logger.info("DRY-RUN MODE: Data will be parsed but not sent to API")
 
+        # Parse paths if provided
+        paths = None
+        if args.path:
+            paths = [Path(p.strip()) for p in args.path.split(",")]
+            # Convert relative paths to absolute paths relative to repository_path
+            paths = [repository_path / p if not p.is_absolute() else p for p in paths]
+            logger.info(f"Scanning {len(paths)} specific path(s): {', '.join(str(p) for p in paths)}")
+
         logger.info(f"Starting IAC scan of repository: {repository_path}")
-        process_repository(repository_path, repository_url=repository_url, platform=platform, dry_run=args.dry_run)
+        process_repository(
+            repository_path, repository_url=repository_url, platform=platform, dry_run=args.dry_run, paths=paths
+        )
         logger.info("IAC scan completed successfully")
         return 0
 

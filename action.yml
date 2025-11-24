@@ -9,6 +9,10 @@ inputs:
     description: 'Skip the checkout step (use if you have already checked out the repository)'
     required: false
     default: 'false'
+  path:
+    description: 'Specific Terraform entrypoint path(s) to scan (comma-separated). If provided, lock file discovery is skipped.'
+    required: false
+    default: ''
   cxm-api-key:
     description: 'CXM API key for authentication'
     required: true
@@ -92,5 +96,10 @@ runs:
           DRY_RUN_FLAG="--dry-run"
         fi
 
-        echo "Scanning repository: ${{ github.workspace }}"
-        cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --repository-url "${{ inputs.repository-url }}" "${{ github.workspace }}"
+        if [ -n "${{ inputs.path }}" ]; then
+          echo "Scanning specific path(s): ${{ inputs.path }}"
+          cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --path "${{ inputs.path }}" --repository-url "${{ inputs.repository-url }}" "${{ github.workspace }}"
+        else
+          echo "Scanning repository: ${{ github.workspace }}"
+          cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --repository-url "${{ inputs.repository-url }}" "${{ github.workspace }}"
+        fi
