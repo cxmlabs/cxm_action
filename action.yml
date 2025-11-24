@@ -75,6 +75,8 @@ runs:
     - name: Run IAC Crawler
       shell: bash
       env:
+        CXM_API_KEY: ${{ inputs.cxm-api-key }}
+        CXM_API_ENDPOINT: ${{ inputs.cxm-api-endpoint }}
         TERRAFORM_SHOW_TIMEOUT: ${{ inputs.terraform-show-timeout }}
         SENSITIVE_FIELDS: ${{ inputs.sensitive-fields }}
         CXM_MAX_RETRIES: ${{ inputs.max-retries }}
