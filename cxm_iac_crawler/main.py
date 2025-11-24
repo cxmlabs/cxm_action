@@ -185,7 +185,7 @@ def process_repository(
             send_data_to_cxm(resources, repository_url=repository_url, scan_metadata=scan_metadata, dry_run=dry_run)
             entry_points_processed += 1
 
-        except subprocess.CalledProcessError as e:
+        except (subprocess.CalledProcessError, ValueError) as e:
             # terraform show failed - likely to fail for all entry points
             logger.error(f"Terraform show failed - aborting scan: {e}")
             raise
@@ -195,5 +195,5 @@ def process_repository(
             logger.error(f"Failed to process {entry_point.parent}: {e}", exc_info=True)
             continue
     if errors > 0:
-        raise e
+        raise RuntimeError(f'{errors} errors occured when scanning tf repo ')
     logger.info(f"Scan complete: processed {entry_points_processed}/{entry_points_found} Terraform configurations")
