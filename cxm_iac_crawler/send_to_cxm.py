@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 CXM_API_KEY = os.getenv("CXM_API_KEY", "")
 CXM_API_ENDPOINT = os.getenv("CXM_API_ENDPOINT", "")
+logger.info(f"using CXM_API_ENDPOINT: {CXM_API_ENDPOINT}")
 BATCH_SIZE = 1000
 MAX_RETRIES = max(1, int(os.getenv("CXM_MAX_RETRIES", "3")))
 TIMEOUT_SECONDS = int(os.getenv("CXM_TIMEOUT_SECONDS", "30"))
