@@ -5,18 +5,10 @@ branding:
   color: 'blue'
 
 inputs:
-  github-token:
-    description: 'GitHub token for cloning the repository (defaults to github.token)'
+  skip-checkout:
+    description: 'Skip the checkout step (use if you have already checked out the repository)'
     required: false
-    default: ${{ github.token }}
-  repository:
-    description: 'Repository to clone (defaults to current repository)'
-    required: false
-    default: ${{ github.repository }}
-  ref:
-    description: 'Git ref to checkout (branch, tag, or commit SHA)'
-    required: false
-    default: ${{ github.ref }}
+    default: 'false'
   cxm-api-key:
     description: 'CXM API key for authentication'
     required: true
@@ -55,6 +47,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Checkout repository
+      if: inputs.skip-checkout != 'true'
+      uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -69,21 +65,6 @@ runs:
       uses: hashicorp/setup-terraform@v3
       with:
         terraform_wrapper: false
-
-    - name: Clone Repository
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        CLONE_DIR="${RUNNER_TEMP}/iac-scan-repo"
-        echo "Cloning repository ${{ inputs.repository }} (ref: ${{ inputs.ref }})"
-
-        git clone --depth=1 --branch="${{ inputs.ref }}" \
-          "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ inputs.repository }}.git" \
-          "${CLONE_DIR}"
-
-        echo "CLONE_DIR=${CLONE_DIR}" >> $GITHUB_ENV
-        echo "Repository cloned to: ${CLONE_DIR}"
 
     - name: Install IAC Crawler
       shell: bash
@@ -111,14 +92,5 @@ runs:
           DRY_RUN_FLAG="--dry-run"
         fi
 
-        echo "Scanning repository: ${CLONE_DIR}"
-        cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --repository-url "${{ inputs.repository-url }}" "${CLONE_DIR}"
-
-    - name: Cleanup
-      shell: bash
-      if: always()
-      run: |
-        if [ -n "${CLONE_DIR}" ] && [ -d "${CLONE_DIR}" ]; then
-          echo "Cleaning up cloned repository: ${CLONE_DIR}"
-          rm -rf "${CLONE_DIR}"
-        fi
+        echo "Scanning repository: ${{ github.workspace }}"
+        cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --repository-url "${{ inputs.repository-url }}" "${{ github.workspace }}"
