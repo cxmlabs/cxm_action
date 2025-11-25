@@ -282,6 +282,19 @@ class TestUnnestTfShow:
         results = list(unnest_tf_show(show_data))
         assert len(results) == 0
 
+    def test_empty_state_no_values_key(self):
+        """Should handle terraform show output with no state (empty dict)."""
+        # When terraform show is run on a module without state, it returns {}
+        show_data = {}
+        results = list(unnest_tf_show(show_data))
+        assert len(results) == 0
+
+    def test_values_without_root_module(self):
+        """Should handle values dict without root_module key."""
+        show_data = {"values": {}}
+        results = list(unnest_tf_show(show_data))
+        assert len(results) == 0
+
 
 class TestIntegrationUnnestTfShow:
     """Integration tests for complete terraform show processing."""

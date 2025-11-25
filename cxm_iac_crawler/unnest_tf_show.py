@@ -123,11 +123,22 @@ def unnest_tf_show(show_data: dict):
     Args:
         show_data: The parsed JSON output from 'terraform show -json' command.
                   Expected to have structure: {'values': {'root_module': {...}}}
+                  If no state exists, show_data may be empty or missing 'values'.
 
     Yields:
         Sanitized resource dictionaries, one for each resource found in the
-        Terraform state across all modules.
+        Terraform state across all modules. Yields nothing if no state exists.
     """
     check_sensitive_fields_config()
-    module = show_data["values"]["root_module"]
-    yield from recursive_unnest_child_modules(module)
+
+    # Handle empty state (no resources deployed yet)
+    if "values" not in show_data:
+        logger.info("No state found in terraform show output (no 'values' key)")
+        return
+
+    root_module = show_data["values"].get("root_module")
+    if root_module is None:
+        logger.info("No root_module found in terraform show output")
+        return
+
+    yield from recursive_unnest_child_modules(root_module)
