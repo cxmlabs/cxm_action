@@ -74,8 +74,8 @@ main() {
         log_warn "Could not determine repository URL automatically"
     fi
 
-    # Always scan current directory
-    SCAN_DIR="."
+    # Use INPUT_SCAN_PATH if provided, otherwise scan current directory
+    SCAN_DIR="${INPUT_SCAN_PATH:-.}"
 
     # Validate current directory has content
     if [ ! "$(ls -A $SCAN_DIR 2>/dev/null)" ]; then
@@ -90,7 +90,7 @@ main() {
         exit 1
     fi
 
-    log_info "Scanning current directory"
+    log_info "Scanning directory: $SCAN_DIR"
 
     # Show some info about what we found
     if [ -d "$SCAN_DIR/.git" ]; then
