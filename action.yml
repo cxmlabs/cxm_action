@@ -5,11 +5,7 @@ branding:
   color: 'blue'
 
 inputs:
-  skip-checkout:
-    description: 'Skip the checkout step (use if you have already checked out the repository)'
-    required: false
-    default: 'false'
-  path:
+  tf-entrypoints:
     description: 'Specific Terraform entrypoint path(s) to scan (comma-separated). If provided, lock file discovery is skipped.'
     required: false
     default: ''
@@ -92,9 +88,9 @@ runs:
           DRY_RUN_FLAG="--dry-run"
         fi
 
-        if [ -n "${{ inputs.path }}" ]; then
-          echo "Scanning specific path(s): ${{ inputs.path }}"
-          cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --path "${{ inputs.path }}" --repository-url "${{ inputs.repository-url }}" "${{ github.workspace }}"
+        if [ -n "${{ inputs.tf-entrypoints }}" ]; then
+          echo "Scanning specific Terraform entrypoint(s): ${{ inputs.tf-entrypoints }}"
+          cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --tf-entrypoints "${{ inputs.tf-entrypoints }}" --repository-url "${{ inputs.repository-url }}" "${{ github.workspace }}"
         else
           echo "Scanning repository: ${{ github.workspace }}"
           cxm-iac-crawler $VERBOSE_FLAG $DRY_RUN_FLAG --repository-url "${{ inputs.repository-url }}" "${{ github.workspace }}"

@@ -58,7 +58,7 @@ def main() -> int:
         help="Enable dry-run mode (parse data without posting to API)",
     )
     parser.add_argument(
-        "--path",
+        "--tf-entrypoints",
         type=str,
         help="Specific Terraform entrypoint path(s) to scan (comma-separated). If provided, lock file discovery is skipped.",
         default=None,
@@ -95,8 +95,8 @@ def main() -> int:
 
         # Parse paths if provided
         paths = None
-        if args.path:
-            paths = [Path(p.strip()) for p in args.path.split(",")]
+        if args.tf_entrypoints:
+            paths = [Path(p.strip()) for p in args.tf_entrypoints.split(",")]
             # Convert relative paths to absolute paths relative to repository_path
             paths = [repository_path / p if not p.is_absolute() else p for p in paths]
             logger.info(f"Scanning {len(paths)} specific path(s): {', '.join(str(p) for p in paths)}")

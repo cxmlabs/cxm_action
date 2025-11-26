@@ -73,23 +73,35 @@ docker run -it --rm \
 
 ## Configuration
 
-### Required Environment Variables
+### GitHub Actions Inputs
 
-| Variable | Description |
-|----------|-------------|
-| `CXM_API_KEY` | CXM API key for authentication |
+| Input | Description | Required | Default |
+|-------|-------------|----------|---------|
+| `cxm-api-key` | CXM API key for authentication | Yes | - |
+| `cxm-api-endpoint` | CXM API endpoint URL | No | - |
+| `tf-entrypoints` | Specific Terraform entrypoint path(s) to scan (comma-separated). If provided, lock file discovery is skipped. | No | `` |
+| `repository-url` | Repository URL to include in API requests (defaults to current repository URL) | No | `${{ github.repositoryUrl }}` |
+| `verbose` | Enable verbose logging | No | `false` |
+| `dry-run` | Enable dry-run mode (parse data without posting to API) | No | `false` |
+| `terraform-show-timeout` | Timeout in seconds for terraform show command | No | `300` |
+| `sensitive-fields` | Comma-separated list of additional sensitive field patterns to redact | No | `` |
+| `max-retries` | Maximum number of retry attempts for API calls | No | `3` |
+| `timeout-seconds` | Timeout in seconds for API calls | No | `30` |
 
-### Optional Environment Variables
+### GitLab CI / Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CXM_API_ENDPOINT` | CXM API endpoint URL | - |
-| `INPUT_REPOSITORY_URL` | Repository URL (auto-detected) | Auto-detected |
-| `INPUT_SCAN_PATH` | Directory to scan | `.` |
-| `INPUT_VERBOSE` | Enable verbose logging | `false` |
-| `TERRAFORM_SHOW_TIMEOUT` | Terraform show timeout (seconds) | `300` |
-| `CXM_MAX_RETRIES` | Maximum API retry attempts | `3` |
-| `CXM_TIMEOUT_SECONDS` | API call timeout (seconds) | `30` |
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `CXM_API_KEY` | CXM API key for authentication | Yes | - |
+| `CXM_API_ENDPOINT` | CXM API endpoint URL | No | - |
+| `INPUT_REPOSITORY_URL` | Repository URL (auto-detected if not provided) | No | Auto-detected |
+| `INPUT_SCAN_PATH` | Directory to scan | No | `.` |
+| `INPUT_VERBOSE` | Enable verbose logging | No | `false` |
+| `INPUT_DRY_RUN` | Enable dry-run mode (parse data without posting to API) | No | `false` |
+| `TERRAFORM_SHOW_TIMEOUT` | Terraform show timeout (seconds) | No | `300` |
+| `SENSITIVE_FIELDS` | Comma-separated list of additional sensitive field patterns to redact | No | `` |
+| `CXM_MAX_RETRIES` | Maximum API retry attempts | No | `3` |
+| `CXM_TIMEOUT_SECONDS` | API call timeout (seconds) | No | `30` |
 
 ## How It Works
 

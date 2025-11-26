@@ -39,10 +39,12 @@ jobs:
 |-------|-------------|----------|---------|
 | `cxm-api-key` | CXM API key for authentication | **Yes** | - |
 | `cxm-api-endpoint` | CXM API endpoint URL | No | - |
+| `tf-entrypoints` | Specific Terraform entrypoint path(s) to scan (comma-separated). If provided, lock file discovery is skipped. | No | - |
 | `repository-url` | Repository URL (auto-detected from GitHub context) | No | Auto-detected |
-| `scan-path` | Path to scan relative to repository root | No | `.` |
 | `verbose` | Enable verbose logging (`true`/`false`) | No | `false` |
+| `dry-run` | Enable dry-run mode (parse data without posting to API) | No | `false` |
 | `terraform-show-timeout` | Timeout for terraform show in seconds | No | `300` |
+| `sensitive-fields` | Comma-separated list of additional sensitive field patterns to redact | No | - |
 | `max-retries` | Maximum API retry attempts | No | `3` |
 | `timeout-seconds` | API call timeout in seconds | No | `30` |
 
@@ -92,7 +94,7 @@ steps:
     uses: ./path/to/cxm_iac_crawler/integrations/github
     with:
       cxm-api-key: ${{ secrets.CXM_API_KEY }}
-      scan-path: 'infrastructure'
+      tf-entrypoints: 'infrastructure'
 ```
 
 ### Error: "403 Forbidden" from API

@@ -11,19 +11,27 @@ inputs:
   cxm-api-endpoint:
     description: 'CXM API endpoint URL'
     required: false
-    default: ''
+  tf-entrypoints:
+    description: 'Specific Terraform entrypoint path(s) to scan (comma-separated). If provided, lock file discovery is skipped.'
+    required: false
   repository-url:
     description: 'Repository URL to include in API requests (auto-detected if not provided)'
     required: false
-    default: ''
   verbose:
     description: 'Enable verbose logging'
+    required: false
+    default: 'false'
+  dry-run:
+    description: 'Enable dry-run mode (parse data without posting to API)'
     required: false
     default: 'false'
   terraform-show-timeout:
     description: 'Timeout in seconds for terraform show command (default: 300)'
     required: false
     default: '300'
+  sensitive-fields:
+    description: 'Comma-separated list of additional sensitive field patterns to redact'
+    required: false
   max-retries:
     description: 'Maximum number of retry attempts for API calls (default: 3)'
     required: false
@@ -39,8 +47,11 @@ runs:
   env:
     CXM_API_KEY: ${{ inputs.cxm-api-key }}
     CXM_API_ENDPOINT: ${{ inputs.cxm-api-endpoint }}
+    INPUT_TF_ENTRYPOINTS: ${{ inputs.tf-entrypoints }}
     INPUT_REPOSITORY_URL: ${{ inputs.repository-url }}
     INPUT_VERBOSE: ${{ inputs.verbose }}
+    INPUT_DRY_RUN: ${{ inputs.dry-run }}
     TERRAFORM_SHOW_TIMEOUT: ${{ inputs.terraform-show-timeout }}
+    SENSITIVE_FIELDS: ${{ inputs.sensitive-fields }}
     CXM_MAX_RETRIES: ${{ inputs.max-retries }}
     CXM_TIMEOUT_SECONDS: ${{ inputs.timeout-seconds }}
