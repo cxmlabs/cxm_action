@@ -28,7 +28,10 @@ class TestMain:
     def test_repository_url_argument(self, mock_process, tmp_path):
         """Should pass repository URL to process_repository when provided."""
         repository_url = "https://github.com/example/terraform-repo"
-        with patch("sys.argv", ["cxm-iac-crawler", "--repository-url", repository_url, str(tmp_path)]):
+        with patch(
+            "sys.argv",
+            ["cxm-iac-crawler", "--repository-url", repository_url, str(tmp_path)],
+        ):
             exit_code = main()
 
         assert exit_code == 0
@@ -145,7 +148,10 @@ class TestCLIIntegration:
     @patch("cxm_iac_crawler.cli.process_repository")
     def test_logging_output(self, mock_process, tmp_path, caplog):
         """Should log appropriate messages during execution."""
-        with caplog.at_level(logging.INFO), patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]):
+        with (
+            caplog.at_level(logging.INFO),
+            patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]),
+        ):
             main()
 
         # Check that log messages were generated
@@ -157,7 +163,10 @@ class TestCLIIntegration:
         """Should log errors appropriately."""
         mock_process.side_effect = RuntimeError("Test error")
 
-        with caplog.at_level(logging.ERROR), patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]):
+        with (
+            caplog.at_level(logging.ERROR),
+            patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]),
+        ):
             main()
 
         assert "Fatal error during IAC scan" in caplog.text
@@ -175,10 +184,16 @@ class TestCLIIntegration:
 
     def test_multiple_invocations(self, tmp_path):
         """Should handle multiple invocations independently."""
-        with patch("cxm_iac_crawler.cli.process_repository") as mock1, patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]):
+        with (
+            patch("cxm_iac_crawler.cli.process_repository") as mock1,
+            patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]),
+        ):
             exit_code1 = main()
 
-        with patch("cxm_iac_crawler.cli.process_repository") as mock2, patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]):
+        with (
+            patch("cxm_iac_crawler.cli.process_repository") as mock2,
+            patch("sys.argv", ["cxm-iac-crawler", str(tmp_path)]),
+        ):
             exit_code2 = main()
 
         assert exit_code1 == 0
@@ -228,3 +243,102 @@ class TestCLIIntegration:
 
         assert exit_code == 0
         mock_process.assert_called_once()
+
+    @patch("cxm_iac_crawler.cli.process_repository")
+    def test_tf_entrypoints_comma_separated(self, mock_process, tmp_path):
+        """Should parse comma-separated Terraform entrypoints."""
+        terraform_dir1 = tmp_path / "terraform" / "prod"
+        terraform_dir2 = tmp_path / "terraform" / "dev"
+        terraform_dir1.mkdir(parents=True)
+        terraform_dir2.mkdir(parents=True)
+
+        entrypoints = "terraform/prod,terraform/dev"
+        with patch(
+            "sys.argv",
+            ["cxm-iac-crawler", str(tmp_path), "--tf-entrypoints", entrypoints],
+        ):
+            exit_code = main()
+
+        assert exit_code == 0
+        mock_process.assert_called_once()
+        # Check that paths parameter was passed with correct paths
+        paths_arg = mock_process.call_args.kwargs.get("paths")
+        assert paths_arg is not None
+        assert len(paths_arg) == 2
+        assert terraform_dir1 in paths_arg
+        assert terraform_dir2 in paths_arg
+
+    @patch("cxm_iac_crawler.cli.process_repository")
+    def test_tf_entrypoints_newline_separated(self, mock_process, tmp_path):
+        """Should parse newline-separated Terraform entrypoints."""
+        terraform_dir1 = tmp_path / "terraform" / "prod"
+        terraform_dir2 = tmp_path / "terraform" / "dev"
+        terraform_dir1.mkdir(parents=True)
+        terraform_dir2.mkdir(parents=True)
+
+        entrypoints = "terraform/prod\nterraform/dev"
+        with patch(
+            "sys.argv",
+            ["cxm-iac-crawler", str(tmp_path), "--tf-entrypoints", entrypoints],
+        ):
+            exit_code = main()
+
+        assert exit_code == 0
+        mock_process.assert_called_once()
+        # Check that paths parameter was passed with correct paths
+        paths_arg = mock_process.call_args.kwargs.get("paths")
+        assert paths_arg is not None
+        assert len(paths_arg) == 2
+        assert terraform_dir1 in paths_arg
+        assert terraform_dir2 in paths_arg
+
+    @patch("cxm_iac_crawler.cli.process_repository")
+    def test_tf_entrypoints_mixed_separators(self, mock_process, tmp_path):
+        """Should parse Terraform entrypoints with mixed comma and newline separators."""
+        terraform_dir1 = tmp_path / "terraform" / "prod"
+        terraform_dir2 = tmp_path / "terraform" / "dev"
+        terraform_dir3 = tmp_path / "terraform" / "staging"
+        terraform_dir1.mkdir(parents=True)
+        terraform_dir2.mkdir(parents=True)
+        terraform_dir3.mkdir(parents=True)
+
+        entrypoints = "terraform/prod,terraform/dev\nterraform/staging"
+        with patch(
+            "sys.argv",
+            ["cxm-iac-crawler", str(tmp_path), "--tf-entrypoints", entrypoints],
+        ):
+            exit_code = main()
+
+        assert exit_code == 0
+        mock_process.assert_called_once()
+        # Check that paths parameter was passed with correct paths
+        paths_arg = mock_process.call_args.kwargs.get("paths")
+        assert paths_arg is not None
+        assert len(paths_arg) == 3
+        assert terraform_dir1 in paths_arg
+        assert terraform_dir2 in paths_arg
+        assert terraform_dir3 in paths_arg
+
+    @patch("cxm_iac_crawler.cli.process_repository")
+    def test_tf_entrypoints_with_whitespace(self, mock_process, tmp_path):
+        """Should handle Terraform entrypoints with extra whitespace."""
+        terraform_dir1 = tmp_path / "terraform" / "prod"
+        terraform_dir2 = tmp_path / "terraform" / "dev"
+        terraform_dir1.mkdir(parents=True)
+        terraform_dir2.mkdir(parents=True)
+
+        entrypoints = "  terraform/prod  ,  terraform/dev  "
+        with patch(
+            "sys.argv",
+            ["cxm-iac-crawler", str(tmp_path), "--tf-entrypoints", entrypoints],
+        ):
+            exit_code = main()
+
+        assert exit_code == 0
+        mock_process.assert_called_once()
+        # Check that paths parameter was passed with correct paths (whitespace stripped)
+        paths_arg = mock_process.call_args.kwargs.get("paths")
+        assert paths_arg is not None
+        assert len(paths_arg) == 2
+        assert terraform_dir1 in paths_arg
+        assert terraform_dir2 in paths_arg

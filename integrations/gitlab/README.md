@@ -49,9 +49,11 @@ Set these in GitLab CI/CD settings (Settings → CI/CD → Variables):
 ### Optional
 
 - `CXM_API_ENDPOINT` - Your CXM API endpoint URL
-- `INPUT_SCAN_PATH` - Path to scan (default: `.`)
+- `INPUT_TF_ENTRYPOINTS` - Specific Terraform entrypoint path(s) to scan (comma-separated)
 - `INPUT_VERBOSE` - Enable verbose logging (`true`/`false`, default: `false`)
+- `INPUT_DRY_RUN` - Enable dry-run mode (default: `false`)
 - `TERRAFORM_SHOW_TIMEOUT` - Terraform show timeout in seconds (default: `300`)
+- `SENSITIVE_FIELDS` - Comma-separated list of additional sensitive field patterns to redact
 - `CXM_MAX_RETRIES` - Maximum API retry attempts (default: `3`)
 - `CXM_TIMEOUT_SECONDS` - API call timeout in seconds (default: `30`)
 

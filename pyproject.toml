@@ -13,3 +13,10 @@ cxm-iac-crawler = "cxm_iac_crawler.cli:main"
 
 [tool.setuptools]
 packages = ["cxm_iac_crawler"]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.0",
+    "pytest>=9.0.1",
+    "ruff>=0.14.6",
+]

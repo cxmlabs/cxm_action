@@ -17,7 +17,7 @@ class TestFindTerraformLockFiles:
         results = list(find_terraform_lock_files(tmp_path))
 
         assert len(results) == 1
-        assert results[0] == lock_file
+        assert results[0] == tmp_path
 
     def test_finds_nested_lock_files(self, tmp_path):
         """Should find .terraform.lock.hcl files in subdirectories."""
@@ -32,8 +32,8 @@ class TestFindTerraformLockFiles:
 
         assert len(results) == 2
         paths = [r.relative_to(tmp_path) for r in results]
-        assert Path("module1/.terraform.lock.hcl") in paths
-        assert Path("module2/submodule/.terraform.lock.hcl") in paths
+        assert Path("module1") in paths
+        assert Path("module2/submodule") in paths
 
     def test_empty_directory(self, tmp_path):
         """Should return empty iterator for directory with no lock files."""
@@ -51,7 +51,7 @@ class TestFindTerraformLockFiles:
         results = list(find_terraform_lock_files(tmp_path))
 
         assert len(results) == 1
-        assert results[0].name == ".terraform.lock.hcl"
+        assert results[0] == tmp_path
 
     def test_path_as_string(self, tmp_path):
         """Should accept path as string."""
@@ -61,7 +61,7 @@ class TestFindTerraformLockFiles:
         results = list(find_terraform_lock_files(str(tmp_path)))
 
         assert len(results) == 1
-        assert results[0] == lock_file
+        assert results[0] == tmp_path
 
     def test_path_as_pathlib(self, tmp_path):
         """Should accept path as Path object."""
@@ -71,7 +71,7 @@ class TestFindTerraformLockFiles:
         results = list(find_terraform_lock_files(tmp_path))
 
         assert len(results) == 1
-        assert results[0] == lock_file
+        assert results[0] == tmp_path
 
     def test_nonexistent_directory(self):
         """Should raise FileNotFoundError for nonexistent directory."""
@@ -96,7 +96,7 @@ class TestFindTerraformLockFiles:
         results = list(find_terraform_lock_files(tmp_path))
 
         assert len(results) == 1
-        assert results[0] == lock_file
+        assert results[0] == deep_path
 
     def test_multiple_lock_files_same_level(self, tmp_path):
         """Should find multiple lock files at the same directory level."""
@@ -140,29 +140,95 @@ class TestFindTerraformLockFiles:
 
         # Python's Path.rglob() does NOT follow symlinks by default
         # So we should only find the lock file in the actual directory, not via the symlink
-        assert len(results) == 1, f"Expected 1 lock file (actual only, no symlink follow), found {len(results)}"
+        assert len(results) == 1, (
+            f"Expected 1 lock file (actual only, no symlink follow), found {len(results)}"
+        )
 
-        # Verify the result is the actual file (not via symlink)
-        assert results[0].name == ".terraform.lock.hcl"
+        # Verify the result is the actual directory (not via symlink)
+        assert results[0].name == "actual"
         assert results[0].exists()
-        assert results[0].parent.name == "actual"
+        assert (results[0] / ".terraform.lock.hcl").exists()
 
         # Verify the symlink exists but wasn't followed
         assert link_dir.exists()
         assert link_dir.is_symlink()
 
-    def test_finds_lock_files_in_hidden_directories(self, tmp_path):
-        """Should find lock files even in hidden directories (directories starting with '.')."""
+    def test_excludes_lock_files_in_modules_directory(self, tmp_path):
+        """Should exclude lock files found in modules directory (false positives)."""
+        # Create modules directory with lock file
+        modules_dir = tmp_path / "modules" / "submodule"
+        modules_dir.mkdir(parents=True)
+        lock_file = modules_dir / ".terraform.lock.hcl"
+        lock_file.touch()
+
+        # Create a valid lock file at root level
+        valid_lock = tmp_path / ".terraform.lock.hcl"
+        valid_lock.touch()
+
+        results = list(find_terraform_lock_files(tmp_path))
+
+        # Should only find the valid lock file, not the one in modules
+        assert len(results) == 1, (
+            f"Expected 1 lock file (modules excluded), found {len(results)}"
+        )
+        assert results[0] == tmp_path
+
+    def test_excludes_lock_files_in_terraform_directory(self, tmp_path):
+        """Should exclude lock files in .terraform directory (cache directory)."""
+        # Create .terraform directory with lock file
+        terraform_cache_dir = tmp_path / ".terraform"
+        terraform_cache_dir.mkdir()
+        lock_file = terraform_cache_dir / ".terraform.lock.hcl"
+        lock_file.touch()
+
+        # Create a valid lock file at root level
+        valid_lock = tmp_path / ".terraform.lock.hcl"
+        valid_lock.touch()
+
+        results = list(find_terraform_lock_files(tmp_path))
+
+        # Should only find the valid lock file, not the one in .terraform
+        assert len(results) == 1, (
+            f"Expected 1 lock file (.terraform excluded), found {len(results)}"
+        )
+        assert results[0] == tmp_path
+
+    def test_excludes_lock_files_in_git_directory(self, tmp_path):
+        """Should exclude lock files in .git directory."""
+        # Create .git directory with lock file
+        git_dir = tmp_path / ".git"
+        git_dir.mkdir()
+        lock_file = git_dir / ".terraform.lock.hcl"
+        lock_file.touch()
+
+        # Create a valid lock file at root level
+        valid_lock = tmp_path / ".terraform.lock.hcl"
+        valid_lock.touch()
+
+        results = list(find_terraform_lock_files(tmp_path))
+
+        # Should only find the valid lock file, not the one in .git
+        assert len(results) == 1, (
+            f"Expected 1 lock file (.git excluded), found {len(results)}"
+        )
+        assert results[0] == tmp_path
+
+    def test_excludes_lock_files_in_hidden_directories(self, tmp_path):
+        """Should exclude lock files in .hidden directories (false positives)."""
         # Create hidden directory with lock file
         hidden_dir = tmp_path / ".hidden"
         hidden_dir.mkdir()
         lock_file = hidden_dir / ".terraform.lock.hcl"
         lock_file.touch()
 
+        # Create a valid lock file at root level
+        valid_lock = tmp_path / ".terraform.lock.hcl"
+        valid_lock.touch()
+
         results = list(find_terraform_lock_files(tmp_path))
 
-        # Should find the lock file in the hidden directory
-        assert len(results) == 1, f"Expected 1 lock file in hidden directory, found {len(results)}"
-        assert results[0].name == ".terraform.lock.hcl"
-        assert results[0].parent.name == ".hidden"
-        assert results[0].exists()
+        # Should only find the valid lock file, not the one in .hidden
+        assert len(results) == 1, (
+            f"Expected 1 lock file (.hidden excluded), found {len(results)}"
+        )
+        assert results[0] == tmp_path

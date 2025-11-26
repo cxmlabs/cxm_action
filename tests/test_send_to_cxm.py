@@ -5,7 +5,11 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
-from cxm_iac_crawler.send_to_cxm import _batch_generator, _send_single_batch, send_data_to_cxm
+from cxm_iac_crawler.send_to_cxm import (
+    _batch_generator,
+    _send_single_batch,
+    send_data_to_cxm,
+)
 
 
 def make_test_scan_metadata():
@@ -95,7 +99,10 @@ class TestSendSingleBatch:
         assert not isinstance(_send_single_batch, Mock)
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("requests.post")
     def test_successful_send(self, mock_post):
         """Should successfully send batch to API."""
@@ -106,13 +113,20 @@ class TestSendSingleBatch:
         batch = [{"id": "1", "type": "aws_instance"}]
         scan_metadata = make_test_scan_metadata()
         repository_url = "https://github.com/test/repo"
-        _send_single_batch(batch, batch_index=0, repository_url=repository_url, scan_metadata=scan_metadata)
+        _send_single_batch(
+            batch,
+            batch_index=0,
+            repository_url=repository_url,
+            scan_metadata=scan_metadata,
+        )
 
         # Verify POST was called with correct parameters
         mock_post.assert_called_once()
         call_args = mock_post.call_args
 
-        assert call_args.args[0] == "https://api.example.com/resources"
+        assert (
+            call_args.args[0] == "https://api.example.com/resources/ci/events/resources"
+        )
         assert call_args.kwargs["json"]["resources"] == batch
         assert call_args.kwargs["json"]["schema_version"] == 0
         assert call_args.kwargs["json"]["scan_metadata"] == scan_metadata
@@ -121,7 +135,10 @@ class TestSendSingleBatch:
         assert call_args.kwargs["headers"]["Content-Type"] == "application/json"
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("requests.post")
     def test_successful_send_with_repository_url(self, mock_post):
         """Should include repository_url in payload when provided."""
@@ -132,13 +149,20 @@ class TestSendSingleBatch:
         batch = [{"id": "1", "type": "aws_instance"}]
         repository_url = "https://github.com/example/repo"
         scan_metadata = make_test_scan_metadata()
-        _send_single_batch(batch, batch_index=0, repository_url=repository_url, scan_metadata=scan_metadata)
+        _send_single_batch(
+            batch,
+            batch_index=0,
+            repository_url=repository_url,
+            scan_metadata=scan_metadata,
+        )
 
         # Verify POST was called with correct parameters
         mock_post.assert_called_once()
         call_args = mock_post.call_args
 
-        assert call_args.args[0] == "https://api.example.com/resources"
+        assert (
+            call_args.args[0] == "https://api.example.com/resources/ci/events/resources"
+        )
         assert call_args.kwargs["json"]["resources"] == batch
         assert call_args.kwargs["json"]["schema_version"] == 0
         assert call_args.kwargs["json"]["repository_url"] == repository_url
@@ -147,7 +171,10 @@ class TestSendSingleBatch:
         assert call_args.kwargs["headers"]["Content-Type"] == "application/json"
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("cxm_iac_crawler.send_to_cxm.MAX_RETRIES", 3)
     @patch("requests.post")
     def test_retry_on_failure(self, mock_post):
@@ -161,12 +188,20 @@ class TestSendSingleBatch:
 
         batch = [{"id": "1"}]
         scan_metadata = make_test_scan_metadata()
-        _send_single_batch(batch, batch_index=0, repository_url="https://github.com/test/repo", scan_metadata=scan_metadata)
+        _send_single_batch(
+            batch,
+            batch_index=0,
+            repository_url="https://github.com/test/repo",
+            scan_metadata=scan_metadata,
+        )
 
         assert mock_post.call_count == 3
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("cxm_iac_crawler.send_to_cxm.MAX_RETRIES", 2)
     @patch("requests.post")
     def test_raises_after_max_retries(self, mock_post):
@@ -175,7 +210,12 @@ class TestSendSingleBatch:
 
         batch = [{"id": "1"}]
         with pytest.raises(requests.exceptions.RequestException):
-            _send_single_batch(batch, batch_index=0, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+            _send_single_batch(
+                batch,
+                batch_index=0,
+                repository_url="https://github.com/test/repo",
+                scan_metadata=make_test_scan_metadata(),
+            )
 
         assert mock_post.call_count == 2
 
@@ -183,29 +223,53 @@ class TestSendSingleBatch:
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com")
     def test_missing_api_key(self):
         """Should raise ValueError when API key is missing."""
-        with pytest.raises(ValueError, match="CXM_API_KEY and CXM_API_ENDPOINT must be configured"):
-            _send_single_batch([], 0, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        with pytest.raises(
+            ValueError, match="CXM_API_KEY and CXM_API_ENDPOINT must be configured"
+        ):
+            _send_single_batch(
+                [],
+                0,
+                repository_url="https://github.com/test/repo",
+                scan_metadata=make_test_scan_metadata(),
+            )
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "")
     def test_missing_api_endpoint(self):
         """Should raise ValueError when API endpoint is missing."""
-        with pytest.raises(ValueError, match="CXM_API_KEY and CXM_API_ENDPOINT must be configured"):
-            _send_single_batch([], 0, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        with pytest.raises(
+            ValueError, match="CXM_API_KEY and CXM_API_ENDPOINT must be configured"
+        ):
+            _send_single_batch(
+                [],
+                0,
+                repository_url="https://github.com/test/repo",
+                scan_metadata=make_test_scan_metadata(),
+            )
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("cxm_iac_crawler.send_to_cxm.MAX_RETRIES", 1)
     @patch("requests.post")
     def test_http_error_response(self, mock_post):
         """Should handle HTTP error responses."""
         mock_response = Mock()
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("400 Bad Request")
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            "400 Bad Request"
+        )
         mock_post.return_value = mock_response
 
         batch = [{"id": "1"}]
         with pytest.raises(requests.exceptions.RequestException):
-            _send_single_batch(batch, batch_index=0, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+            _send_single_batch(
+                batch,
+                batch_index=0,
+                repository_url="https://github.com/test/repo",
+                scan_metadata=make_test_scan_metadata(),
+            )
 
     @patch("requests.post")
     def test_custom_timeout(self, mock_post, monkeypatch):
@@ -225,7 +289,12 @@ class TestSendSingleBatch:
         mock_response.raise_for_status = Mock()
         mock_post.return_value = mock_response
 
-        stc._send_single_batch([{"id": "1"}], 0, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        stc._send_single_batch(
+            [{"id": "1"}],
+            0,
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         call_args = mock_post.call_args
         assert call_args.kwargs["timeout"] == 60
@@ -243,14 +312,22 @@ class TestSendDataToCxm:
     def test_missing_api_key(self):
         """Should raise ValueError when API key is missing."""
         with pytest.raises(ValueError, match="CXM_API_KEY must be configured"):
-            send_data_to_cxm(iter([]), repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+            send_data_to_cxm(
+                iter([]),
+                repository_url="https://github.com/test/repo",
+                scan_metadata=make_test_scan_metadata(),
+            )
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
     @patch("cxm_iac_crawler.send_to_cxm._send_single_batch")
     def test_sends_empty_generator(self, mock_send):
         """Should handle empty resource generator."""
         resources = iter([])
-        send_data_to_cxm(resources, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            resources,
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         mock_send.assert_not_called()
 
@@ -259,7 +336,11 @@ class TestSendDataToCxm:
     def test_sends_single_batch(self, mock_send):
         """Should send single batch for small resource list."""
         resources = iter([{"id": i} for i in range(10)])
-        send_data_to_cxm(resources, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            resources,
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         assert mock_send.call_count == 1
         batch_sent = mock_send.call_args.args[0]
@@ -271,7 +352,11 @@ class TestSendDataToCxm:
         """Should split large resource list into multiple batches."""
         # Create 2500 resources (will be split into 3 batches of 1000)
         resources = iter([{"id": i} for i in range(2500)])
-        send_data_to_cxm(resources, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            resources,
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         assert mock_send.call_count == 3
 
@@ -290,7 +375,11 @@ class TestSendDataToCxm:
     def test_batch_indices(self, mock_send):
         """Should pass correct batch indices."""
         resources = iter([{"id": i} for i in range(2500)])
-        send_data_to_cxm(resources, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            resources,
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         # Check batch indices
         assert mock_send.call_args_list[0].args[1] == 0
@@ -302,7 +391,10 @@ class TestIntegrationSendToCxm:
     """Integration tests for complete send workflow."""
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("cxm_iac_crawler.send_to_cxm.MAX_RETRIES", 3)
     @patch("requests.post")
     def test_complete_workflow_with_retries(self, mock_post):
@@ -321,13 +413,20 @@ class TestIntegrationSendToCxm:
         ]
 
         resources = iter([{"id": i} for i in range(2500)])
-        send_data_to_cxm(resources, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            resources,
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         # Should have made 4 requests total (3 batches + 1 retry)
         assert mock_post.call_count == 4
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("cxm_iac_crawler.send_to_cxm.MAX_RETRIES", 2)
     @patch("requests.post")
     def test_partial_failure_raises(self, mock_post):
@@ -345,10 +444,17 @@ class TestIntegrationSendToCxm:
         resources = iter([{"id": i} for i in range(1500)])
 
         with pytest.raises(requests.exceptions.RequestException):
-            send_data_to_cxm(resources, repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+            send_data_to_cxm(
+                resources,
+                repository_url="https://github.com/test/repo",
+                scan_metadata=make_test_scan_metadata(),
+            )
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "test-key")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.example.com/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.example.com/resources",
+    )
     @patch("requests.post")
     def test_generator_consumed_lazily(self, mock_post):
         """Should consume generator lazily, not all at once."""
@@ -364,7 +470,11 @@ class TestIntegrationSendToCxm:
         success_response.raise_for_status = Mock()
         mock_post.return_value = success_response
 
-        send_data_to_cxm(resource_generator(), repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            resource_generator(),
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         # All resources should be consumed
         assert consumed_count == 2500
@@ -372,7 +482,10 @@ class TestIntegrationSendToCxm:
         assert mock_post.call_count == 3
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "production-key-123")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.cxm.io/v1/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.cxm.io/v1/resources",
+    )
     @patch("requests.post")
     def test_end_to_end_realistic_scenario(self, mock_post):
         """Should handle realistic end-to-end scenario."""
@@ -385,14 +498,21 @@ class TestIntegrationSendToCxm:
                     "address": f"{resource_types[i % 3]}.resource_{i}",
                     "type": resource_types[i % 3],
                     "mode": "managed",
-                    "values": {"id": f"resource-{i}", "arn": f"arn:aws:service:region:account:{i}"},
+                    "values": {
+                        "id": f"resource-{i}",
+                        "arn": f"arn:aws:service:region:account:{i}",
+                    },
                 }
 
         success_response = Mock()
         success_response.raise_for_status = Mock()
         mock_post.return_value = success_response
 
-        send_data_to_cxm(generate_resources(), repository_url="https://github.com/test/repo", scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            generate_resources(),
+            repository_url="https://github.com/test/repo",
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         # Should send single batch (150 < 1000)
         assert mock_post.call_count == 1
@@ -406,7 +526,10 @@ class TestIntegrationSendToCxm:
         assert payload["schema_version"] == 0
 
     @patch("cxm_iac_crawler.send_to_cxm.CXM_API_KEY", "production-key-123")
-    @patch("cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT", "https://api.cxm.io/v1/resources")
+    @patch(
+        "cxm_iac_crawler.send_to_cxm.CXM_API_ENDPOINT",
+        "https://api.cxm.io/v1/resources",
+    )
     @patch("requests.post")
     def test_end_to_end_with_repository_url(self, mock_post):
         """Should include repository_url in payload when provided."""
@@ -419,7 +542,10 @@ class TestIntegrationSendToCxm:
                     "address": f"{resource_types[i % 3]}.resource_{i}",
                     "type": resource_types[i % 3],
                     "mode": "managed",
-                    "values": {"id": f"resource-{i}", "arn": f"arn:aws:service:region:account:{i}"},
+                    "values": {
+                        "id": f"resource-{i}",
+                        "arn": f"arn:aws:service:region:account:{i}",
+                    },
                 }
 
         success_response = Mock()
@@ -427,7 +553,11 @@ class TestIntegrationSendToCxm:
         mock_post.return_value = success_response
 
         repository_url = "https://github.com/example/terraform-infra"
-        send_data_to_cxm(generate_resources(), repository_url=repository_url, scan_metadata=make_test_scan_metadata())
+        send_data_to_cxm(
+            generate_resources(),
+            repository_url=repository_url,
+            scan_metadata=make_test_scan_metadata(),
+        )
 
         # Should send single batch (150 < 1000)
         assert mock_post.call_count == 1
