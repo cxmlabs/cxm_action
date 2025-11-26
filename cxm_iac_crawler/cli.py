@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -96,7 +97,9 @@ def main() -> int:
         # Parse paths if provided
         paths = None
         if args.tf_entrypoints:
-            paths = [Path(p.strip()) for p in args.tf_entrypoints.split(",")]
+            # Split by comma or newline and clean up whitespace
+            path_strings = re.split(r'[,\n]', args.tf_entrypoints)
+            paths = [Path(p.strip()) for p in path_strings if p.strip()]
             # Convert relative paths to absolute paths relative to repository_path
             paths = [repository_path / p if not p.is_absolute() else p for p in paths]
             logger.info(f"Scanning {len(paths)} specific path(s): {', '.join(str(p) for p in paths)}")
