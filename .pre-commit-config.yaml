@@ -6,20 +6,18 @@ repos:
         entry: uv run ruff check --fix
         language: system
         types: [python]
-        stages: [commit]
 
       - id: ruff-format
         name: ruff format
         entry: uv run ruff format
         language: system
         types: [python]
-        stages: [commit]
 
       - id: pytest
         name: pytest
         entry: uv run pytest tests/ -q
         language: system
         types: [python]
-        stages: [push]
+        stages: [pre-push]
         pass_filenames: false
         always_run: true
