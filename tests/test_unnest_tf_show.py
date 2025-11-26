@@ -167,13 +167,20 @@ class TestRemoveSensitiveData:
 
     def test_resource_with_sensitive_values(self):
         """Should redact sensitive values based on metadata."""
-        resource = {"values": {"name": "test", "password": "secret"}, "sensitive_values": {"password": True}}
+        resource = {
+            "values": {"name": "test", "password": "secret"},
+            "sensitive_values": {"password": True},
+        }
         result = remove_sensitive_data(resource)
         assert result["values"] == {"name": "test", "password": "**SENSITIVE**"}
 
     def test_preserves_other_fields(self):
         """Should preserve non-values fields."""
-        resource = {"address": "aws_instance.example", "type": "aws_instance", "values": {"id": "i-123"}}
+        resource = {
+            "address": "aws_instance.example",
+            "type": "aws_instance",
+            "values": {"id": "i-123"},
+        }
         result = remove_sensitive_data(resource)
         assert result["address"] == "aws_instance.example"
         assert result["type"] == "aws_instance"
@@ -205,7 +212,10 @@ class TestRecursiveUnnestChildModules:
         """Should recursively yield resources from child modules."""
         module = {
             "resources": [{"values": {"id": "parent"}}],
-            "child_modules": [{"resources": [{"values": {"id": "child1"}}]}, {"resources": [{"values": {"id": "child2"}}]}],
+            "child_modules": [
+                {"resources": [{"values": {"id": "child1"}}]},
+                {"resources": [{"values": {"id": "child2"}}]},
+            ],
         }
         results = list(recursive_unnest_child_modules(module))
         assert len(results) == 3
@@ -219,7 +229,10 @@ class TestRecursiveUnnestChildModules:
         module = {
             "resources": [{"values": {"id": "root"}}],
             "child_modules": [
-                {"resources": [{"values": {"id": "level1"}}], "child_modules": [{"resources": [{"values": {"id": "level2"}}]}]}
+                {
+                    "resources": [{"values": {"id": "level1"}}],
+                    "child_modules": [{"resources": [{"values": {"id": "level2"}}]}],
+                }
             ],
         }
         results = list(recursive_unnest_child_modules(module))
@@ -235,7 +248,14 @@ class TestRecursiveUnnestChildModules:
 
     def test_removes_sensitive_data(self):
         """Should apply remove_sensitive_data to all resources."""
-        module = {"resources": [{"values": {"id": "1", "password": "secret"}, "sensitive_values": {"password": True}}]}
+        module = {
+            "resources": [
+                {
+                    "values": {"id": "1", "password": "secret"},
+                    "sensitive_values": {"password": True},
+                }
+            ]
+        }
         results = list(recursive_unnest_child_modules(module))
         assert results[0]["values"]["password"] == "**SENSITIVE**"
 
@@ -250,7 +270,11 @@ class TestUnnestTfShow:
 
     def test_basic_structure(self):
         """Should extract resources from standard terraform show structure."""
-        show_data = {"values": {"root_module": {"resources": [{"values": {"id": "test-resource"}}]}}}
+        show_data = {
+            "values": {
+                "root_module": {"resources": [{"values": {"id": "test-resource"}}]}
+            }
+        }
         results = list(unnest_tf_show(show_data))
         assert len(results) == 1
         assert results[0]["values"]["id"] == "test-resource"
@@ -366,11 +390,19 @@ class TestIntegrationUnnestTfShow:
                             "values": {
                                 "tags": {"Name": "test", "Environment": "dev"},
                                 "block_device_mappings": [
-                                    {"device_name": "/dev/sda1", "ebs": {"encrypted": True, "kms_key_id": "key-123"}}
+                                    {
+                                        "device_name": "/dev/sda1",
+                                        "ebs": {
+                                            "encrypted": True,
+                                            "kms_key_id": "key-123",
+                                        },
+                                    }
                                 ],
                                 "security_groups": ["sg-123", "sg-456"],
                             },
-                            "sensitive_values": {"block_device_mappings": [{"ebs": {"kms_key_id": True}}]},
+                            "sensitive_values": {
+                                "block_device_mappings": [{"ebs": {"kms_key_id": True}}]
+                            },
                         }
                     ]
                 }
@@ -382,7 +414,10 @@ class TestIntegrationUnnestTfShow:
         assert len(results) == 1
         resource = results[0]
         assert resource["values"]["tags"]["Name"] == "test"
-        assert resource["values"]["block_device_mappings"][0]["ebs"]["kms_key_id"] == "**SENSITIVE**"
+        assert (
+            resource["values"]["block_device_mappings"][0]["ebs"]["kms_key_id"]
+            == "**SENSITIVE**"
+        )
         assert resource["values"]["security_groups"] == ["sg-123", "sg-456"]
 
     def test_multiple_levels_of_nesting(self):
@@ -397,7 +432,9 @@ class TestIntegrationUnnestTfShow:
                             "child_modules": [
                                 {
                                     "resources": [{"values": {"id": "level2"}}],
-                                    "child_modules": [{"resources": [{"values": {"id": "level3"}}]}],
+                                    "child_modules": [
+                                        {"resources": [{"values": {"id": "level3"}}]}
+                                    ],
                                 }
                             ],
                         }

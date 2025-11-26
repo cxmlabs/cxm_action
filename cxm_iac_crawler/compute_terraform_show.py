@@ -53,11 +53,15 @@ def compute_terraform_show(terraform_dir: str | Path) -> dict[str, Any]:
             logger.debug(f"Terraform init output: {init_result.stdout}")
 
     except subprocess.TimeoutExpired:
-        logger.error(f"Terraform init timed out after {TERRAFORM_SHOW_TIMEOUT} seconds in {terraform_path}")
+        logger.error(
+            f"Terraform init timed out after {TERRAFORM_SHOW_TIMEOUT} seconds in {terraform_path}"
+        )
         raise
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Terraform init failed in {terraform_path}: exit code {e.returncode}, stderr: {e.stderr}")
+        logger.error(
+            f"Terraform init failed in {terraform_path}: exit code {e.returncode}, stderr: {e.stderr}"
+        )
         raise
 
     try:
@@ -80,11 +84,15 @@ def compute_terraform_show(terraform_dir: str | Path) -> dict[str, Any]:
         return terraform_data
 
     except subprocess.TimeoutExpired:
-        logger.error(f"Terraform show timed out after {TERRAFORM_SHOW_TIMEOUT} seconds in {terraform_path}")
+        logger.error(
+            f"Terraform show timed out after {TERRAFORM_SHOW_TIMEOUT} seconds in {terraform_path}"
+        )
         raise
 
     except subprocess.CalledProcessError as e:
-        logger.error(f"Terraform show failed in {terraform_path}: exit code {e.returncode}, stderr: {e.stderr}")
+        logger.error(
+            f"Terraform show failed in {terraform_path}: exit code {e.returncode}, stderr: {e.stderr}"
+        )
         raise
 
     except json.JSONDecodeError as e:

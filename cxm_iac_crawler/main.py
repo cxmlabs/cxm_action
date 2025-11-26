@@ -1,6 +1,5 @@
 import logging
 import os
-import subprocess
 import uuid
 from collections.abc import Iterator
 from datetime import UTC, datetime
@@ -37,7 +36,9 @@ def detect_ci_platform(platform_hint: str | None = None) -> str:
     if platform_hint:
         platform = platform_hint.lower()
         if platform not in SUPPORTED_PLATFORMS:
-            raise ValueError(f"Unsupported platform: {platform}. Supported platforms: {', '.join(sorted(SUPPORTED_PLATFORMS))}")
+            raise ValueError(
+                f"Unsupported platform: {platform}. Supported platforms: {', '.join(sorted(SUPPORTED_PLATFORMS))}"
+            )
         return platform
     # GitHub Actions
     elif os.getenv("GITHUB_ACTIONS") == "true":
@@ -64,7 +65,9 @@ def create_scan_metadata(platform: str) -> dict:
         ValueError: If platform is not supported
     """
     if platform not in SUPPORTED_PLATFORMS:
-        raise ValueError(f"Unsupported platform: {platform}. Supported platforms: {', '.join(sorted(SUPPORTED_PLATFORMS))}")
+        raise ValueError(
+            f"Unsupported platform: {platform}. Supported platforms: {', '.join(sorted(SUPPORTED_PLATFORMS))}"
+        )
 
     scan_metadata = {
         "platform": platform,
@@ -82,7 +85,9 @@ def create_scan_metadata(platform: str) -> dict:
                     "actor": os.getenv("GITHUB_ACTOR"),
                     "trigger_event": os.getenv("GITHUB_EVENT_NAME"),
                     "repository_owner": os.getenv("GITHUB_REPOSITORY_OWNER"),
-                    "repository_name": os.getenv("GITHUB_REPOSITORY", "").split("/")[-1] if os.getenv("GITHUB_REPOSITORY") else None,
+                    "repository_name": os.getenv("GITHUB_REPOSITORY", "").split("/")[-1]
+                    if os.getenv("GITHUB_REPOSITORY")
+                    else None,
                     "repository_default_branch": os.getenv("GITHUB_REF_NAME")
                     if os.getenv("GITHUB_REF_NAME") in ("main", "master")
                     else None,
@@ -118,7 +123,9 @@ def select_essential_data(resource_list: Iterator[dict]) -> Iterator[dict]:
             continue
 
         if "values" not in resource or "arn" not in resource["values"]:
-            logger.warning(f"Skipping resource {resource.get('address', 'unknown')} without 'arn' field")
+            logger.warning(
+                f"Skipping resource {resource.get('address', 'unknown')} without 'arn' field"
+            )
             continue
 
         new_resource = {}
@@ -160,7 +167,9 @@ def process_repository(
     """
     # Create scan metadata with timestamp and run_id
     scan_metadata = create_scan_metadata(platform)
-    logger.info(f"Platform: {scan_metadata['platform']}, Run ID: {scan_metadata['run_id']}")
+    logger.info(
+        f"Platform: {scan_metadata['platform']}, Run ID: {scan_metadata['run_id']}"
+    )
     logger.debug(f"Scan metadata: {scan_metadata}")
 
     entry_points_found = 0
@@ -169,7 +178,9 @@ def process_repository(
     # If specific paths are provided, use them; otherwise discover via lock files
     if paths:
         entry_points = paths
-        logger.info(f"Using {len(entry_points)} specified path(s), skipping lock file discovery")
+        logger.info(
+            f"Using {len(entry_points)} specified path(s), skipping lock file discovery"
+        )
     else:
         entry_points = find_terraform_lock_files(repository_dir)
         logger.info("Discovering Terraform configurations via lock files")
@@ -182,13 +193,20 @@ def process_repository(
         try:
             tfshow = compute_terraform_show(entry_point)
             resources = process_show_output(tfshow)
-            send_data_to_cxm(resources, repository_url=repository_url, scan_metadata=scan_metadata, dry_run=dry_run)
+            send_data_to_cxm(
+                resources,
+                repository_url=repository_url,
+                scan_metadata=scan_metadata,
+                dry_run=dry_run,
+            )
             entry_points_processed += 1
 
         except Exception as e:
-            errors +=1
+            errors += 1
             logger.error(f"Failed to process {entry_point.parent}: {e}", exc_info=True)
             continue
     if errors > 0:
-        raise RuntimeError(f'{errors} errors occured when scanning tf repo ')
-    logger.info(f"Scan complete: processed {entry_points_processed}/{entry_points_found} Terraform configurations")
+        raise RuntimeError(f"{errors} errors occured when scanning tf repo ")
+    logger.info(
+        f"Scan complete: processed {entry_points_processed}/{entry_points_found} Terraform configurations"
+    )

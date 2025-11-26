@@ -29,7 +29,9 @@ def main() -> int:
     Returns:
         Exit code (0 for success, 1 for failure)
     """
-    parser = argparse.ArgumentParser(description="Scan Terraform infrastructure and send resources to CXM API")
+    parser = argparse.ArgumentParser(
+        description="Scan Terraform infrastructure and send resources to CXM API"
+    )
     parser.add_argument(
         "repository_path",
         type=Path,
@@ -99,15 +101,21 @@ def main() -> int:
         if args.tf_entrypoints:
             # Split by comma or newline and clean up whitespace
             logger.debug(f"TF-ENTRYPOINTS detected: {args.tf_entrypoints}")
-            path_strings = re.split(r'[,\n]', args.tf_entrypoints)
+            path_strings = re.split(r"[,\n]", args.tf_entrypoints)
             paths = [Path(p.strip()) for p in path_strings if p.strip()]
             # Convert relative paths to absolute paths relative to repository_path
             paths = [repository_path / p if not p.is_absolute() else p for p in paths]
-            logger.info(f"Scanning {len(paths)} specific path(s): {', '.join(str(p) for p in paths)}")
+            logger.info(
+                f"Scanning {len(paths)} specific path(s): {', '.join(str(p) for p in paths)}"
+            )
 
         logger.info(f"Starting IAC scan of repository: {repository_path}")
         process_repository(
-            repository_path, repository_url=repository_url, platform=platform, dry_run=args.dry_run, paths=paths
+            repository_path,
+            repository_url=repository_url,
+            platform=platform,
+            dry_run=args.dry_run,
+            paths=paths,
         )
         logger.info("IAC scan completed successfully")
         return 0

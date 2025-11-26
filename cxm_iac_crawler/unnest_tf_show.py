@@ -53,7 +53,9 @@ def remove_sensitive_data(resource: dict):
     """
     # Check if arn or address match sensitive fields
     if "sensitive_values" in resource:
-        resource["values"] = remove_sensitive_recursive(resource["values"], resource["sensitive_values"])
+        resource["values"] = remove_sensitive_recursive(
+            resource["values"], resource["sensitive_values"]
+        )
     else:
         resource["values"] = remove_sensitive_recursive(resource["values"], {})
     return resource
@@ -81,14 +83,18 @@ def remove_sensitive_recursive(values: Any, sensitive_values: dict | list | bool
             if is_key_sensitive(key):
                 new_values[key] = "**REDACTED**"
             elif key in sensitive_values:
-                new_values[key] = remove_sensitive_recursive(value, sensitive_values[key])
+                new_values[key] = remove_sensitive_recursive(
+                    value, sensitive_values[key]
+                )
             else:
                 new_values[key] = value
         return new_values
     elif isinstance(sensitive_values, list):
         new_values = []
         for resource_value, sensitive_value in zip(values, sensitive_values):
-            new_values.append(remove_sensitive_recursive(resource_value, sensitive_value))
+            new_values.append(
+                remove_sensitive_recursive(resource_value, sensitive_value)
+            )
         return new_values
     elif sensitive_values is True:
         return "**SENSITIVE**"

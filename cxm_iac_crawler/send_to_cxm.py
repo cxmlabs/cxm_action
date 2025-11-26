@@ -60,19 +60,27 @@ def _send_single_batch(
 
     for attempt in range(MAX_RETRIES):
         try:
-            url = CXM_API_ENDPOINT.strip('/') + '/ci/events/resources'
-            response = requests.post(url, json=payload, headers=headers, timeout=TIMEOUT_SECONDS)
+            url = CXM_API_ENDPOINT.strip("/") + "/ci/events/resources"
+            response = requests.post(
+                url, json=payload, headers=headers, timeout=TIMEOUT_SECONDS
+            )
             response.raise_for_status()
 
-            logger.info(f"Successfully sent batch {batch_index + 1} ({len(batch)} resources)")
+            logger.info(
+                f"Successfully sent batch {batch_index + 1} ({len(batch)} resources)"
+            )
             return
 
         except requests.exceptions.RequestException as e:
             if attempt < MAX_RETRIES - 1:
-                logger.warning(f"Failed to send batch {batch_index + 1} (attempt {attempt + 1}/{MAX_RETRIES}): {e}")
+                logger.warning(
+                    f"Failed to send batch {batch_index + 1} (attempt {attempt + 1}/{MAX_RETRIES}): {e}"
+                )
                 continue
 
-            logger.error(f"Failed to send batch {batch_index + 1} after {MAX_RETRIES} attempts: {e}")
+            logger.error(
+                f"Failed to send batch {batch_index + 1} after {MAX_RETRIES} attempts: {e}"
+            )
             raise
 
 
@@ -98,10 +106,14 @@ def send_data_to_cxm(
         raise ValueError("CXM_API_KEY must be configured")
 
     if dry_run and (not CXM_API_KEY or not CXM_API_ENDPOINT):
-        logger.warning("DRY-RUN MODE: CXM_API_KEY and/or CXM_API_ENDPOINT not configured - data will only be parsed")
+        logger.warning(
+            "DRY-RUN MODE: CXM_API_KEY and/or CXM_API_ENDPOINT not configured - data will only be parsed"
+        )
 
     if dry_run:
-        logger.info(f"DRY-RUN MODE: Processing data with batch size {BATCH_SIZE} (no data will be sent)")
+        logger.info(
+            f"DRY-RUN MODE: Processing data with batch size {BATCH_SIZE} (no data will be sent)"
+        )
     else:
         logger.info(f"Starting batch send with batch size: {BATCH_SIZE}")
 
@@ -113,8 +125,12 @@ def send_data_to_cxm(
         total_batches += 1
 
         if dry_run:
-            logger.info(f"DRY-RUN: Would send batch {batch_idx + 1} ({len(batch)} resources)")
-            logger.debug(f"DRY-RUN: Batch {batch_idx + 1} sample data: {batch[0] if batch else 'empty'}")
+            logger.info(
+                f"DRY-RUN: Would send batch {batch_idx + 1} ({len(batch)} resources)"
+            )
+            logger.debug(
+                f"DRY-RUN: Batch {batch_idx + 1} sample data: {batch[0] if batch else 'empty'}"
+            )
         else:
             _send_single_batch(
                 batch,
@@ -127,6 +143,10 @@ def send_data_to_cxm(
         logger.warning("No resources were processed (generator was empty)")
     else:
         if dry_run:
-            logger.info(f"DRY-RUN: Processed {total_batches} batches ({total_resources} resources) without sending")
+            logger.info(
+                f"DRY-RUN: Processed {total_batches} batches ({total_resources} resources) without sending"
+            )
         else:
-            logger.info(f"Successfully sent all {total_batches} batches ({total_resources} resources)")
+            logger.info(
+                f"Successfully sent all {total_batches} batches ({total_resources} resources)"
+            )

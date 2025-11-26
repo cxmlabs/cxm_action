@@ -1,7 +1,11 @@
 """Tests for platform validation and version detection."""
 
 import pytest
-from cxm_iac_crawler.main import SUPPORTED_PLATFORMS, create_scan_metadata, detect_ci_platform
+from cxm_iac_crawler.main import (
+    SUPPORTED_PLATFORMS,
+    create_scan_metadata,
+    detect_ci_platform,
+)
 from cxm_iac_crawler.send_to_cxm import CRAWLER_VERSION
 
 

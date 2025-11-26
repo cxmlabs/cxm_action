@@ -5,7 +5,16 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Directories to exclude from entry point discovery
-EXCLUDED_DIRS = {".terraform", "modules", ".git", ".hidden", "__pycache__", ".pytest_cache", ".venv", "node_modules"}
+EXCLUDED_DIRS = {
+    ".terraform",
+    "modules",
+    ".git",
+    ".hidden",
+    "__pycache__",
+    ".pytest_cache",
+    ".venv",
+    "node_modules",
+}
 
 
 def _is_valid_entrypoint(lock_file_path: Path, root_path: Path) -> bool:
@@ -32,7 +41,9 @@ def _is_valid_entrypoint(lock_file_path: Path, root_path: Path) -> bool:
     # Check if any part of the path contains excluded directories
     for part in rel_path.parts:
         if part in EXCLUDED_DIRS:
-            logger.debug(f"Excluding lock file {lock_file_path}: contains excluded directory '{part}'")
+            logger.debug(
+                f"Excluding lock file {lock_file_path}: contains excluded directory '{part}'"
+            )
             return False
 
     return True
