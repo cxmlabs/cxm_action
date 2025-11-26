@@ -115,6 +115,11 @@ main() {
         CRAWLER_CMD="$CRAWLER_CMD --repository-url \"$REPO_URL\""
     fi
 
+    # Add tf-entrypoints if provided
+    if [ -n "${INPUT_TF_ENTRYPOINTS}" ]; then
+        CRAWLER_CMD="$CRAWLER_CMD --tf-entrypoints \"${INPUT_TF_ENTRYPOINTS}\""
+    fi
+
     # Add scan directory
     CRAWLER_CMD="$CRAWLER_CMD \"$SCAN_DIR\""
 
