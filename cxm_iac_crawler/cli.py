@@ -98,6 +98,7 @@ def main() -> int:
         paths = None
         if args.tf_entrypoints:
             # Split by comma or newline and clean up whitespace
+            logger.info(f"TF-ENTRYPOINTS detected: {args.tf_entrypoints}")
             path_strings = re.split(r'[,\n]', args.tf_entrypoints)
             paths = [Path(p.strip()) for p in path_strings if p.strip()]
             # Convert relative paths to absolute paths relative to repository_path
