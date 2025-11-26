@@ -28,7 +28,8 @@ def compute_terraform_show(terraform_dir: str | Path) -> dict[str, Any]:
     terraform_path = Path(terraform_dir)
 
     if not terraform_path.exists():
-        logger.error(f"Directory does not exist: {terraform_path}")
+        logger.info(f"raw_dir : {terraform_dir}, cwd {os.getcwd()}")
+        logger.error(f"Directory does not exist: {terraform_path} ")
         raise FileNotFoundError(f"Directory does not exist: {terraform_path}")
 
     if not terraform_path.is_dir():
